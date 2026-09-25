@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="con-intro">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -34,7 +34,7 @@ a{color:inherit}
 :focus-visible{outline:2px solid var(--oro);outline-offset:3px}
 
 /* ---------- portada ---------- */
-.portada{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 1.6rem) 1.25rem 3.2rem;position:relative;text-align:center}
+.portada{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 1.6rem) 1.25rem 3.2rem;position:relative;text-align:center}
 .arco{position:relative;width:min(80vw,380px);aspect-ratio:3/4;border:2px solid var(--oro);border-radius:999px 999px 12px 12px;padding:8px}
 .arco img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block;border-radius:999px 999px 6px 6px}
 .arco::after{content:"";position:absolute;left:8px;right:8px;bottom:8px;height:32%;border-radius:0 0 6px 6px;background:linear-gradient(to bottom,rgba(243,220,221,0),var(--rubor))}
@@ -57,9 +57,11 @@ a{color:inherit}
 /* ---------- intro de cuento ---------- */
 html.con-intro,html.con-intro body{overflow:hidden}
 html.con-intro .arco,html.con-intro .titular > *{animation-play-state:paused}
-.intro{position:fixed;inset:0;z-index:100;background:#241029;display:flex;justify-content:center;overflow:hidden;transition:opacity .9s ease}
+.intro{display:none}
+html.con-intro .intro{display:flex}
+.intro{position:fixed;inset:0;z-index:100;background:#241029;justify-content:center;overflow:hidden;transition:opacity .9s ease}
 .intro.fuera{opacity:0;pointer-events:none}
-.escena{position:relative;width:min(100vw,62svh);height:100svh;overflow:hidden}
+.escena{position:relative;width:min(100vw,62vh);width:min(100vw,62svh);height:100vh;height:100svh;overflow:hidden}
 .sala{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,#fde9f0 0%,#eeb1c7 40%,#a4467a 80%,#5b1f4b 100%);cursor:pointer}
 .sala .bokeh{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,240,246,.9),rgba(255,240,246,0) 70%);animation:flotar 6s ease-in-out infinite alternate}
 .piso{position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(to bottom,#f6cfdc,#e39bb7 60%,#c56b93);box-shadow:0 -1px 0 rgba(255,255,255,.7)}
@@ -215,7 +217,15 @@ footer .despedida{font-size:1rem;color:var(--oro-claro)}
 footer .quien{font-family:var(--script);font-size:3.4rem;line-height:1.2}
 footer .dia{font-size:.9rem;color:var(--oro-claro);margin-top:.4rem}
 </style>
-<noscript><style>.intro{display:none}html.con-intro,html.con-intro body{overflow:auto}html.con-intro .arco,html.con-intro .titular > *{animation-play-state:running}</style></noscript>
+<script>
+(function(){try{
+  var r=document.documentElement;
+  if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  r.classList.add("con-intro");
+  /* seguro: si la intro no queda lista, se libera la página */
+  window.addEventListener("load",function(){setTimeout(function(){if(!window.__introLista){r.classList.remove("con-intro");}},1500);});
+}catch(e){}})();
+</script>
 </head>
 <body>
 
@@ -551,8 +561,8 @@ footer .dia{font-size:.9rem;color:var(--oro-claro);margin-top:.4rem}
 (function(){
   "use strict";
   var raiz=document.documentElement,intro=document.getElementById("intro");
-  var reducido=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var timers=[],terminado=false,iniciado=false;
+  if(!raiz.classList.contains("con-intro")){if(intro)intro.parentNode.removeChild(intro);return;}
+  var timers=[],terminado=false,iniciado=false,detenerMagia=function(){};
   function luego(ms,fn){timers.push(setTimeout(fn,ms));}
   function terminar(){
     if(terminado)return; terminado=true;
@@ -561,7 +571,7 @@ footer .dia{font-size:.9rem;color:var(--oro-claro);margin-top:.4rem}
     raiz.classList.remove("con-intro");
     setTimeout(function(){intro.parentNode&&intro.parentNode.removeChild(intro);},950);
   }
-  if(reducido){terminar();return;}
+  try{
   document.getElementById("saltar").addEventListener("click",terminar);
 
   /* partículas: humo rosado y brillo dorado */
@@ -597,7 +607,7 @@ footer .dia{font-size:.9rem;color:var(--oro-claro);margin-top:.4rem}
     }
     if(corriendo||parts.length)rafId=requestAnimationFrame(cuadro);
   }
-  function detenerMagia(){corriendo=false;parts=[];if(rafId)cancelAnimationFrame(rafId);cx.clearRect(0,0,W,H);}
+  detenerMagia=function(){corriendo=false;parts=[];if(rafId)cancelAnimationFrame(rafId);cx.clearRect(0,0,W,H);};
 
   function abrir(){
     if(iniciado)return; iniciado=true;
@@ -615,8 +625,11 @@ footer .dia{font-size:.9rem;color:var(--oro-claro);margin-top:.4rem}
     luego(10800,function(){intro.classList.add("flash");});
     luego(11250,terminar);
   }
-  document.getElementById("sala").addEventListener("click",abrir);
-  window.addEventListener("resize",function(){if(iniciado&&!terminado)medir();});
+  function abrirSeguro(){try{abrir();}catch(e){terminar();}}
+  document.getElementById("sala").addEventListener("click",abrirSeguro);
+  window.addEventListener("resize",function(){try{if(iniciado&&!terminado)medir();}catch(e){}});
+  window.__introLista=true;
+  }catch(e){terminar();}
 })();
 </script>
 </body>
